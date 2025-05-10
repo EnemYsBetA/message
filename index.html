@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Агентский канал связи</title>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #0e0e0e;
+      font-family: 'Courier New', Courier, monospace;
+      color: #00ffcc;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    #loader {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #0e0e0e;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      font-size: 20px;
+      z-index: 1000;
+      font-family: 'Press Start 2P', monospace;
+      color: #00ffcc;
+    }
+
+    #openMessageButton {
+      padding: 15px 30px;
+      background-color: #00ffcc;
+      color: black;
+      font-size: 18px;
+      border: none;
+      cursor: pointer;
+      margin-top: 20px;
+      font-family: 'Press Start 2P', monospace;
+      box-shadow: 0 0 10px 2px rgba(0, 255, 204, 0.7);
+      border-radius: 5px;
+      transition: background-color 0.3s ease, transform 0.2s ease;
+      display: none; /* Изначально кнопка скрыта */
+    }
+
+    #openMessageButton:hover {
+      background-color: #00b3b3;
+      transform: scale(1.05);
+    }
+
+    #openMessageButton:active {
+      background-color: #009999;
+    }
+
+    #videoMessage {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: black;
+      z-index: 9999;
+      display: none;
+    }
+
+    #videoMessage video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* Все остальные элементы скрыты изначально */
+    #chat, #inputBox, #interface, #extraContent, #puzzle, #miniGame {
+      display: none;
+    }
+
+
+ #chat {
+      width: 90%;
+      max-width: 600px;
+      height: 50vh;
+      background: #1a1a1a;
+      border: 2px solid #00ffcc;
+      padding: 20px;
+      overflow-y: auto;
+      box-shadow: 0 0 20px #00ffcc55;
+    }
+    .message {
+      margin: 10px 0;
+    }
+    .user {
+      text-align: right;
+      color: #ffffff;
+    }
+    .bot {
+      text-align: left;
+      color: #00ffcc;
+    }
+    #inputBox {
+      display: flex;
+      margin-top: 10px;
+      width: 90%;
+      max-width: 600px;
+    }
+    input {
+      flex: 1;
+      padding: 10px;
+      background: #000;
+      color: #00ffcc;
+      border: 1px solid #00ffcc;
+      outline: none;
+    }
+    button {
+      padding: 10px;
+      background: #00ffcc;
+      border: none;
+      color: #000;
+      cursor: pointer;
+    }
+
+  </style>
+</head>
+<body>
+  <div id="loader">Загрузка...</div>
+
+  <!-- Кнопка для открытия сообщения -->
+  <button id="openMessageButton" onclick="openMessage()">Открыть сообщение</button>
+
+  <!-- Видео сообщение -->
+  <div id="videoMessage">
+    <video id="video" autoplay>
+      <source src="video.mp4" type="video/mp4">
+      Видео недоступно
+    </video>
+  </div>
+
+  <div id="chat">
+    <div class="message bot">[СИСТЕМА] Канал зашифрован. Подключение установлено...</div>
+    <div class="message bot">Рядовой Мяу похищен. Ты единственный, кто может его найти.</div>
+  </div>
+
+  <div id="inputBox">
+    <input type="text" id="userInput" placeholder="Введите сообщение..." />
+    <button onclick="sendMessage()">Отправить</button>
+  </div>
+
+  <div id="extraContent"></div>
+
+  <script>
+    const loader = document.getElementById('loader');
+    const openMessageButton = document.getElementById('openMessageButton');
+    const videoMessage = document.getElementById('videoMessage');
+    const chat = document.getElementById('chat');
+    const inputBox = document.getElementById('inputBox');
+    /*const interfacePanel = document.getElementById('interface');*/
+    
+    const loadingTexts = ["Анализ системы...", "Канал зашифрован...", "Подключение установлено..."];
+    let step = 0;
+
+const dialogues = [
+      { 
+        botMessage: "[СИСТЕМА] Введите код активации...", 
+        userPrompt: "KITTY", 
+        response: "[СИСТЕМА] Проверка... Доступ разрешен... "
+      },
+      { 
+        botMessage: "[СИСТЕМА] Агент, сейчас вам предстоит пройти проверку и доказать, что центр не ошибся, выбрав вас для этой миссии. Не подведите. Отправьте 1, чтобы продолжить...", 
+        userPrompt: "1", 
+      },
+      { 
+        botMessage: "[СИСТЕМА] Введите номер дела...", 
+        userPrompt: "№0413-15/2", 
+        response: "Проверка запущена..."
+      },
+      { 
+        botMessage: "[СИСТЕМА] Сколько часов у вас осталось, чтобы найти похищенный актив?", 
+        userPrompt: "несколько", 
+      },
+      { 
+        botMessage: "[СИСТЕМА] 1, 1, 2, 3, 5, 8, ...", 
+        userPrompt: "13", 
+        //response: "Фибоначчи"
+      },
+      { 
+        botMessage: "[СИСТЕМА] Без меня ты не найдешь выход, но я не дверь. Я нужна в лабиринте, но не в комнате. Что я?", 
+        userPrompt: "карта", 
+      },
+      { 
+        botMessage: "[СИСТЕМА] ятвзак", 
+        userPrompt: "взятка", 
+      },
+      { 
+        botMessage: "[СИСТЕМА] У них нет сердца, но они показывают чувства. Поговаривают, что это зеркало души.", 
+        userPrompt: "глаза", 
+      },
+      { 
+        botMessage: "[СИСТЕМА] Теплокровные стайные хищники, некоторые органы и системы которых атрофировались, как у троглобионтов. Кожа хорошо пропускает влагу, красная и полупрозрачная из-за насыщенности похожим на гемоглобин веществом. Средний рост особи, прямо стоящей на задних конечностях - 2,2 метра, а вес 250 кг, хотя от этой величины могут быть значительные отклонения. На каждой из четырёх конечностей имеется по три снабжённых когтем пальца, напротив которых расположен большой палец. Конечности покрыты щетинками, что весьма положительно влияет на способность к лазанию. Головы вытянутые, глаз или глазниц нет, мозгового черепа нет. Челюсти снабжены заострёнными зубами, которые тускло светятся красным. Строение челюстей и зубов похоже на таковое у хаулиодовых, зубы достигают шести сантиметров в длину. На внешней стороне челюстей расположены терморецепторные ямки. Вдоль покрытого иглами позвоночника расположены светочувствительные пятна. Иглы же достигают 16 сантиметров в длину и, похоже, чувствительны к движению атмосферному давлению.", 
+        userPrompt: "SCP-939",
+      },
+      { 
+        botMessage: "[СИСТЕМА] Какой фильм рассказывает историю супергероя, который очень быстро бегает, а его главный враг — усатый учёный с амбициями захватить мир?", 
+        userPrompt: "соник", 
+      },
+      { 
+        botMessage: "[СИСТЕМА] Ты носишь тот самый браслет?", 
+        userPrompt: "нет", 
+      },
+      { 
+        botMessage: "[СИСТЕМА] Зай, ты не поверишь, но я еду…?", 
+        userPrompt: "домой", 
+      },
+      { 
+        botMessage: "[СИСТЕМА] vjq dkfcntkby", 
+        userPrompt: "мой властелин", 
+      },
+      { 
+        botMessage: "[СИСТЕМА] 444-555-6-6-6666-5555-777-4-9999", 
+        userPrompt: "коррупция", 
+        //response: "кнопочный телефон, клавиатура"
+      },
+      { 
+        botMessage: "[СИСТЕМА] Где она в первый раз сказала, что любит тебя?", 
+        userPrompt: "в лесу", 
+      },
+      {
+        botMessage: "[СИСТЕМА] Меня осудили, когда мне было всего семнадцать. Четыре года я провел в заточении. Свое имя я скрываю, а ты используешь его, чтобы скрыть своё. Так если мы настолько близки, то ты должен знать, кто я.", 
+        userPrompt: "александр думский", 
+      },
+      { 
+        botMessage: "[СИСТЕМА] Чего ты больше всего боишься, когда живешь вместе?", 
+        userPrompt : "предательства" ,
+      }
+    ];
+
+    let dialogueIndex = 0;
+
+    function showLoaderText() {
+      if (step < loadingTexts.length) {
+        loader.innerHTML = "";
+        typeWriter(loadingTexts[step], loader, 0);
+        step++;
+        setTimeout(showLoaderText, 7000);
+      } else {
+        loader.style.display = 'none';
+        openMessageButton.style.display = 'inline-block';
+      }
+    }
+
+    function typeWriter(text, element, i) {
+      if (i < text.length) {
+        element.innerHTML += text.charAt(i);
+        setTimeout(() => typeWriter(text, element, i + 1), 100);
+      }
+    }
+
+    function openMessage() {
+      openMessageButton.style.display = 'none';
+      videoMessage.style.display = 'block';
+      const video = videoMessage.querySelector('video');
+      video.play().catch(error => console.log("Ошибка при воспроизведении видео:", error));
+
+      video.onended = function () {
+        videoMessage.style.display = 'none';
+        showChat();
+      };
+    }
+
+    function showChat() {
+      chat.style.display = 'block';
+      chat.innerHTML += `<div class="message bot">${dialogues[dialogueIndex].botMessage}</div>`;
+      inputBox.style.display = 'flex';
+    }
+
+    function sendMessage() {
+      const input = document.getElementById('userInput');
+      const text = input.value.trim();
+      if (text === '') return;
+
+      const userMsg = document.createElement('div');
+      userMsg.className = 'message user';
+      userMsg.textContent = text;
+      chat.appendChild(userMsg);
+
+      input.value = '';
+      chat.scrollTop = chat.scrollHeight;
+
+      setTimeout(() => {
+        const botMsg = document.createElement('div');
+        botMsg.className = 'message bot';
+        
+        if (text.toLowerCase() === dialogues[dialogueIndex].userPrompt.toLowerCase()) {
+          botMsg.textContent = dialogues[dialogueIndex].response;
+          dialogueIndex++;
+
+          if (dialogueIndex < dialogues.length) {
+            setTimeout(() => showChat(), 2000);
+          } else {
+            botMsg.textContent = "53.941925, 27.727266";
+          }
+        } else {
+          botMsg.textContent = "[СИСТЕМА] Неверный ответ. Попробуй снова.";
+        }
+
+        chat.appendChild(botMsg);
+        chat.scrollTop = chat.scrollHeight;
+      }, 800);
+    }
+
+    window.onload = function() {
+      setTimeout(() => {
+        showLoaderText();
+      }, 500);
+    };
+
+</script>
+</body>
+</html>
